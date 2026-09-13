@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased font-sans min-h-screen selection:bg-blue-600 selection:text-white;
+  }
+
+  /* Accessible focus indicators */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-blue-400 ring-offset-2 ring-offset-slate-950;
+  }
+}
+
+/* High Contrast Mode Styles */
+.high-contrast-mode {
+  --tw-bg-opacity: 1;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.high-contrast-mode div,
+.high-contrast-mode section,
+.high-contrast-mode header,
+.high-contrast-mode nav {
+  border-color: #ffffff !important;
+}
+
+.high-contrast-mode button {
+  border: 2px solid #ffff00 !important;
+}
+
+/* Custom scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
