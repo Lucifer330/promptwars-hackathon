@@ -1,6 +1,6 @@
 # Smart Event Experience Platform
 
-A production-quality web platform designed to streamline large-scale event navigation, session discovery, real-time crowd management, emergency SOS dispatch, accessibility compliance, and organizer operational control.
+A production-quality web platform designed to streamline large-scale event navigation, session discovery, real-time crowd coordination, emergency SOS dispatch, accessibility compliance, and organizer operational control.
 
 ---
 
@@ -19,7 +19,7 @@ Build a web-based **Smart Event Experience** platform that makes events organize
 
 ## Problem
 
-Event attendees waste significant time wandering crowded halls, missing priority sessions, and struggling to locate essentials like accessible restrooms, food courts, or first-aid stations. Simultaneously, organizers lack centralized real-time visibility into crowd surges, emergency incidents, and broadcast communication.
+Event attendees waste significant time wandering crowded halls, missing priority sessions, and struggling to locate essentials like accessible restrooms, food courts, or first-aid stations. Simultaneously, organizers lack centralized visibility into crowd surges, emergency incidents, and broadcast communication.
 
 ---
 
@@ -27,7 +27,7 @@ Event attendees waste significant time wandering crowded halls, missing priority
 
 **Smart Event Experience** provides an all-in-one responsive web platform uniting attendees and organizers into a single interactive ecosystem:
 - **Attendees** gain an interactive vector map with Dijkstra shortest pathfinding (including step-free wheelchair routes), an explainable rule-based session recommendation engine, live crowd density telemetry, one-tap emergency SOS dispatching, and broadcast notifications.
-- **Organizers** gain a dedicated Command Desk to monitor real-time venue telemetry, manage session schedules, dispatch emergency responders to active SOS alerts, override crowd advisories, and publish instant venue announcements.
+- **Organizers** gain a dedicated Command Desk to monitor venue telemetry, manage session schedules, dispatch emergency responders to active SOS alerts, override crowd advisories, and publish instant venue announcements.
 
 ---
 
@@ -49,17 +49,17 @@ Event attendees waste significant time wandering crowded halls, missing priority
 - Discover upcoming sessions, keynotes, and workshops.
 - Receive explainable personalized session recommendations based on technical interests.
 - Calculate shortest walking routes across the venue with optional step-free accessibility filters.
-- Monitor live zone crowd density and amenity queue wait times.
-- Trigger instant emergency SOS dispatch requests.
+- Monitor zone crowd density and amenity queue wait times.
+- Trigger emergency SOS dispatch requests.
 - Receive live organizer broadcast updates.
 
 ### B. Organizer
 - Access the operational Command Desk.
-- Monitor real-time venue occupancy, high-density zones, and active incidents.
+- Monitor venue occupancy, high-density zones, and active incidents.
 - Respond to emergency SOS tickets and update dispatch status (Pending → In Progress → Resolved).
 - Adjust or override zone crowd advisories.
 - Edit session timings, stage locations, and room capacities.
-- Broadcast instant announcements to all connected attendees.
+- Broadcast announcements to all connected attendees.
 
 ---
 
@@ -102,7 +102,7 @@ src/
 │   ├── attendee/         # InteractiveMap, EventDiscovery, CrowdMonitor, EmergencySOS
 │   ├── organizer/        # OrganizerDashboard
 │   └── common/           # Toast, Modals, Badges
-└── tests/                # Vitest Test Suite (pathfinding, recommendations, context)
+└── tests/                # Vitest Test Suite (pathfinding, recommendations, context, discovery, navigation, crowd, organizer)
 ```
 
 ---
@@ -118,14 +118,14 @@ src/
 
 ## Problem Statement Alignment
 
-| Problem Statement Requirement | Project Feature | File / Module | User Value | Expected Result |
+| Problem Statement Requirement | Project Feature | File / Module | User Value | Verified Result |
 | :--- | :--- | :--- | :--- | :--- |
-| **Interactive Navigation** | Dijkstra Pathfinding & Interactive Vector Map | [`src/components/attendee/InteractiveMap.tsx`](file:///c:/Users/ry384/Desktop/promptwar/promptwars-hackathon/src/components/attendee/InteractiveMap.tsx), [`src/utils/pathfinding.ts`](file:///c:/Users/ry384/Desktop/promptwar/promptwars-hackathon/src/utils/pathfinding.ts) | Helps attendees locate stages, booths, restrooms, food courts, and helpdesks | Step-by-step walking directions with ETA and distance |
-| **Event Discovery** | Multi-filter Agenda & Session Explorer | [`src/components/attendee/EventDiscovery.tsx`](file:///c:/Users/ry384/Desktop/promptwar/promptwars-hackathon/src/components/attendee/EventDiscovery.tsx) | Allows browsing upcoming sessions, keynotes, speakers, and room capacities | Searchable, filterable agenda with bookmarking |
+| **Interactive Navigation** | Dijkstra Pathfinding & Vector Map | [`src/components/attendee/InteractiveMap.tsx`](file:///c:/Users/ry384/Desktop/promptwar/promptwars-hackathon/src/components/attendee/InteractiveMap.tsx), [`src/utils/pathfinding.ts`](file:///c:/Users/ry384/Desktop/promptwar/promptwars-hackathon/src/utils/pathfinding.ts) | Helps attendees locate stages, booths, restrooms, food courts, and helpdesks | Step-by-step walking directions with ETA and distance |
+| **Event Discovery** | Multi-filter Agenda & Explorer | [`src/components/attendee/EventDiscovery.tsx`](file:///c:/Users/ry384/Desktop/promptwar/promptwars-hackathon/src/components/attendee/EventDiscovery.tsx) | Allows browsing upcoming sessions, keynotes, speakers, and room capacities | Searchable, filterable agenda with bookmarking |
 | **Personalized Recommendations** | Rule-Based Explainable Affinity Engine | [`src/utils/recommendations.ts`](file:///c:/Users/ry384/Desktop/promptwar/promptwars-hackathon/src/utils/recommendations.ts) | Suggests relevant sessions based on attendee technical interests | Ranked session list with clear match rationale tags |
 | **Crowd Coordination** | Live Zone Density Telemetry & Alternate Routes | [`src/components/attendee/CrowdMonitor.tsx`](file:///c:/Users/ry384/Desktop/promptwar/promptwars-hackathon/src/components/attendee/CrowdMonitor.tsx) | Identifies busy zones (LOW/MODERATE/HIGH/CRITICAL) and queue times | Reroutes attendees away from congested zones |
-| **Emergency & SOS Support** | Instant SOS Dispatch Desk & Emergency Contacts | [`src/components/attendee/EmergencySOS.tsx`](file:///c:/Users/ry384/Desktop/promptwar/promptwars-hackathon/src/components/attendee/EmergencySOS.tsx) | Provides fast access to medical, security, and lost item assistance | One-tap dispatch ticket creation with status tracking |
-| **Accessibility Features** | Step-Free Route Filtering, High Contrast & ARIA | [`src/components/layout/AccessibilityBar.tsx`](file:///c:/Users/ry384/Desktop/promptwar/promptwars-hackathon/src/components/layout/AccessibilityBar.tsx) | Ensures full accessibility for attendees with different needs | Wheelchair route toggle, WCAG 2.2 contrast mode, font scaling |
+| **Emergency & SOS Support** | Instant SOS Dispatch Desk & Hotlines | [`src/components/attendee/EmergencySOS.tsx`](file:///c:/Users/ry384/Desktop/promptwar/promptwars-hackathon/src/components/attendee/EmergencySOS.tsx) | Provides fast access to medical, security, and lost item assistance | One-tap dispatch ticket creation with status tracking |
+| **Accessibility Features** | Step-Free Route Filtering, High Contrast & ARIA | [`src/components/layout/AccessibilityBar.tsx`](file:///c:/Users/ry384/Desktop/promptwar/promptwars-hackathon/src/components/layout/AccessibilityBar.tsx) | Ensures accessibility for attendees with different needs | Wheelchair route toggle, high contrast mode, font scaling |
 | **Real-Time Updates** | Announcement Broadcast Engine & Toasts | [`src/components/common/Toast.tsx`](file:///c:/Users/ry384/Desktop/promptwar/promptwars-hackathon/src/components/common/Toast.tsx) | Keeps attendees informed of urgent alerts and schedule shifts | Real-time broadcast drawer and toast alerts |
 | **Organizer Dashboard** | Operations Command Desk & Incident Triage | [`src/components/organizer/OrganizerDashboard.tsx`](file:///c:/Users/ry384/Desktop/promptwar/promptwars-hackathon/src/components/organizer/OrganizerDashboard.tsx) | Enables event managers to oversee crowds, resolve SOS incidents, and publish alerts | Operational control center with live overrides |
 
@@ -141,7 +141,7 @@ Venue navigation utilizes Dijkstra graph pathfinding connecting floor plan nodes
 
 ## Personalization
 
-The recommendation engine scores sessions using rule-based scoring:
+The recommendation engine scores sessions using transparent rule-based scoring:
 - +40 points for matching selected interest tags
 - +30 points for matching preferred category tracks
 - +15 points for featured summit keynotes
@@ -171,8 +171,8 @@ The SOS desk supports four incident classifications: Medical First Aid, Security
 
 ## Accessibility
 
-Built to adhere to WCAG 2.2 Level AA accessibility guidelines:
-- Accessible contrast ratios and High Contrast Mode theme
+Designed to adhere to key WCAG 2.2 accessibility principles:
+- Contrast ratios and High Contrast Mode theme
 - Full keyboard navigation focus rings
 - Font scaling options (1x, 1.25x, 1.5x)
 - Reduced motion setting for animations
@@ -208,10 +208,13 @@ The Organizer Command Desk provides four primary operational modules:
 
 ## Testing
 
-The project includes a Vitest test suite (`7/7 tests passing`):
-- Pathfinding graph algorithms and accessibility filters
-- Recommendation engine scoring and rationale calculation
+The project includes an extensive Vitest test suite (`20/20 tests passing` across 7 test files):
+- Pathfinding graph algorithms, invalid node handling, and accessibility filters
+- Recommendation engine scoring, fallback modes, and rationale calculation
 - Context provider state updates and reactive broadcasting
+- Event discovery search and category filtering
+- Emergency SOS ticket dispatching and status transitions
+- Organizer Dashboard actions and zone crowd level overrides
 
 Run tests via:
 ```bash
@@ -225,7 +228,7 @@ See [`TESTING.md`](file:///c:/Users/ry384/Desktop/promptwar/promptwars-hackathon
 ## Performance / Efficiency
 
 - **Fast Build**: Vite 5 produces a production bundle of 236 kB (66 kB gzipped).
-- **Strict Size Budget**: Entire repository size remains strictly under 10 MB.
+- **Strict Size Budget**: Entire repository size remains strictly under 10 MB (source files ~0.33 MB).
 - **Minimal Dependencies**: Lightweight footprint relying solely on React, Lucide Icons, and Tailwind CSS.
 
 ---
@@ -280,7 +283,7 @@ Open `http://localhost:5173` in your browser.
 ## Known Limitations
 
 - Pathfinding operates on standard graph nodes; floor plan overlay uses 2D vector positioning.
-- Emergency dispatch features operate as a realistic demo simulation.
+- Emergency dispatch features operate as a realistic on-site demo simulation.
 
 ---
 
