@@ -1,4 +1,5 @@
 import { LocationNode, MapEdge, NavigationRoute, RouteStep } from '../types';
+import { MinPriorityQueue } from './priorityQueue';
 
 export function findShortestRoute(
   startId: string,
@@ -35,7 +36,7 @@ export function findShortestRoute(
   locations.forEach((loc) => adj.set(loc.id, []));
 
   edges.forEach((edge) => {
-    // If accessibleOnly requested, exclude edges requiring stairs
+    // If step-free accessible route requested, filter out edges requiring stairs
     if (accessibleOnly && edge.requiresStairs) return;
 
     if (adj.has(edge.from)) adj.get(edge.from)!.push(edge);
@@ -50,48 +51,36 @@ export function findShortestRoute(
 
   const distances = new Map<string, number>();
   const previous = new Map<string, { node: string; edge: MapEdge } | null>();
-  const unvisited = new Set<string>();
+  const pq = new MinPriorityQueue<string>();
 
   locations.forEach((loc) => {
     distances.set(loc.id, Infinity);
     previous.set(loc.id, null);
-    unvisited.add(loc.id);
   });
 
   distances.set(startId, 0);
+  pq.enqueue(startId, 0);
 
-  while (unvisited.size > 0) {
-    // Find node with minimum distance
-    let current: string | null = null;
-    let minDistance = Infinity;
-
-    unvisited.forEach((nodeId) => {
-      const d = distances.get(nodeId) ?? Infinity;
-      if (d < minDistance) {
-        minDistance = d;
-        current = nodeId;
-      }
-    });
-
-    if (!current || minDistance === Infinity) break;
+  while (!pq.isEmpty()) {
+    const current = pq.dequeue();
+    if (!current) break;
     if (current === endId) break;
 
-    unvisited.delete(current);
-
+    const currentDist = distances.get(current) ?? Infinity;
     const neighbors = adj.get(current) || [];
-    for (const edge of neighbors) {
-      if (!unvisited.has(edge.to)) continue;
 
-      const alt = minDistance + edge.distance;
+    for (const edge of neighbors) {
+      const alt = currentDist + edge.distance;
       if (alt < (distances.get(edge.to) ?? Infinity)) {
         distances.set(edge.to, alt);
         previous.set(edge.to, { node: current, edge });
+        pq.enqueue(edge.to, alt);
       }
     }
   }
 
   if (distances.get(endId) === Infinity) {
-    return null; // Route not found (e.g. no accessible path available)
+    return null; // Route not reachable (e.g. no step-free path available)
   }
 
   // Reconstruct path
@@ -111,7 +100,7 @@ export function findShortestRoute(
   }
 
   const totalDistance = distances.get(endId) || 0;
-  // Estimate walking speed ~ 1.4 m/s => ~ 84 meters per minute
+  // Estimated walking speed: ~1.4 m/s => ~70m per minute
   const estimatedMinutes = Math.max(1, Math.ceil(totalDistance / 70));
 
   let isFullyAccessible = true;

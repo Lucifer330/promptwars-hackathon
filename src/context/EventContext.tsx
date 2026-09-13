@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react';
 import {
   LocationNode,
   Zone,
@@ -93,13 +93,13 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     reducedMotion: false,
   });
 
-  const clearToast = () => setActiveToast(null);
+  const clearToast = useCallback(() => setActiveToast(null), []);
 
-  const updatePreferences = (partial: Partial<UserPreferences>) => {
+  const updatePreferences = useCallback((partial: Partial<UserPreferences>) => {
     setPreferences((prev) => ({ ...prev, ...partial }));
-  };
+  }, []);
 
-  const toggleInterest = (interest: string) => {
+  const toggleInterest = useCallback((interest: string) => {
     setPreferences((prev) => {
       const exists = prev.selectedInterests.includes(interest);
       const nextInterests = exists
@@ -107,24 +107,24 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         : [...prev.selectedInterests, interest];
       return { ...prev, selectedInterests: nextInterests };
     });
-  };
+  }, []);
 
-  const toggleSavedSession = (sessionId: string) => {
+  const toggleSavedSession = useCallback((sessionId: string) => {
     setSavedSessionIds((prev) => {
       const exists = prev.includes(sessionId);
       const nextSaved = exists ? prev.filter((id) => id !== sessionId) : [...prev, sessionId];
       const targetSession = sessions.find((s) => s.id === sessionId);
       if (targetSession) {
         const msg = exists
-          ? `Removed "${targetSession.title}" from your schedule.`
-          : `Added "${targetSession.title}" to your schedule.`;
+          ? `Removed "${targetSession.title.slice(0, 40)}" from agenda.`
+          : `Added "${targetSession.title.slice(0, 40)}" to agenda.`;
         setActiveToast(msg);
       }
       return nextSaved;
     });
-  };
+  }, [sessions]);
 
-  // Route calculation
+  // Optimized route calculation memoized by node IDs, locations graph, and accessibility preference
   const activeRoute = useMemo(() => {
     return findShortestRoute(
       navigationStartId,
@@ -135,66 +135,83 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
   }, [navigationStartId, navigationEndId, locations, preferences.accessibleRouteOnly]);
 
-  const startNavigationTo = (locationId: string) => {
+  const startNavigationTo = useCallback((locationId: string) => {
+    const loc = locations.find((l) => l.id === locationId);
+    if (!loc) return; // Input validation check
     setNavigationEndId(locationId);
     setActiveView('map');
-    const loc = locations.find((l) => l.id === locationId);
-    if (loc) {
-      setActiveToast(`Navigating to ${loc.name}`);
-    }
-  };
+    setActiveToast(`Navigating to ${loc.name}`);
+  }, [locations]);
 
-  // Create SOS incident
-  const createSOSIncident = (
-    locationId: string,
-    type: SOSType,
-    description: string,
-    contactName?: string,
-    contactPhone?: string
-  ) => {
-    const loc = locations.find((l) => l.id === locationId);
-    const newIncident: SOSIncident = {
-      id: `inc-${Date.now().toString().slice(-4)}`,
-      locationId,
-      locationName: loc ? loc.name : 'Unknown Location',
-      type,
-      description,
-      status: 'PENDING',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      contactName,
-      contactPhone,
-    };
+  // Create SOS incident with input boundary validation
+  const createSOSIncident = useCallback(
+    (
+      locationId: string,
+      type: SOSType,
+      description: string,
+      contactName?: string,
+      contactPhone?: string
+    ) => {
+      const loc = locations.find((l) => l.id === locationId);
+      const sanitizedDesc = description.trim().slice(0, 500); // Cap description length
+      const sanitizedName = contactName ? contactName.trim().slice(0, 100) : undefined;
+      const sanitizedPhone = contactPhone ? contactPhone.trim().slice(0, 30) : undefined;
 
-    setIncidents((prev) => [newIncident, ...prev]);
-    setActiveToast(`🚨 SOS Emergency alert dispatched for ${newIncident.locationName}! Dispatch team notified.`);
-  };
+      const newIncident: SOSIncident = {
+        id: `inc-${Date.now().toString().slice(-4)}`,
+        locationId,
+        locationName: loc ? loc.name : 'Unknown Location',
+        type: ['MEDICAL', 'SECURITY', 'LOST_ITEM', 'ASSISTANCE'].includes(type) ? type : 'ASSISTANCE',
+        description: sanitizedDesc || 'Emergency assistance requested',
+        status: 'PENDING',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        contactName: sanitizedName,
+        contactPhone: sanitizedPhone,
+      };
+
+      setIncidents((prev) => [newIncident, ...prev]);
+      setActiveToast(`🚨 SOS Emergency alert dispatched for ${newIncident.locationName}! Dispatch team notified.`);
+    },
+    [locations]
+  );
 
   // Organizer Actions
-  const addAnnouncement = (title: string, message: string, category: Announcement['category']) => {
+  const addAnnouncement = useCallback((title: string, message: string, category: Announcement['category']) => {
+    const sanitizedTitle = title.trim().slice(0, 150);
+    const sanitizedMsg = message.trim().slice(0, 500);
+    const validCategory = ['URGENT', 'SCHEDULE', 'CROWD', 'GENERAL'].includes(category) ? category : 'GENERAL';
+
     const newAnn: Announcement = {
       id: `ann-${Date.now().toString().slice(-4)}`,
-      title,
-      message,
-      category,
+      title: sanitizedTitle || 'Event Notice',
+      message: sanitizedMsg || 'Event operational update',
+      category: validCategory,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
     setAnnouncements((prev) => [newAnn, ...prev]);
-    setActiveToast(`📢 Broadcast published: "${title}"`);
-  };
+    setActiveToast(`📢 Broadcast published: "${newAnn.title}"`);
+  }, []);
 
-  const updateIncidentStatus = (incidentId: string, status: SOSIncident['status']) => {
+  const updateIncidentStatus = useCallback((incidentId: string, status: SOSIncident['status']) => {
+    const validStatus = ['PENDING', 'IN_PROGRESS', 'RESOLVED'].includes(status) ? status : 'PENDING';
     setIncidents((prev) =>
-      prev.map((inc) => (inc.id === incidentId ? { ...inc, status } : inc))
+      prev.map((inc) => (inc.id === incidentId ? { ...inc, status: validStatus } : inc))
     );
-    setActiveToast(`Incident #${incidentId} status updated to ${status}`);
-  };
+    setActiveToast(`Incident #${incidentId} status updated to ${validStatus}`);
+  }, []);
 
-  const updateZoneCrowd = (zoneId: string, level: CrowdLevel, count?: number) => {
+  const updateZoneCrowd = useCallback((zoneId: string, level: CrowdLevel, count?: number) => {
     setZones((prev) =>
       prev.map((z) => {
         if (z.id === zoneId) {
-          const nextCount = count !== undefined ? count : Math.round(z.maxCapacity * (level === 'LOW' ? 0.3 : level === 'MODERATE' ? 0.6 : level === 'HIGH' ? 0.85 : 0.98));
+          const nextCount =
+            count !== undefined
+              ? Math.max(0, Math.min(z.maxCapacity, count))
+              : Math.round(
+                  z.maxCapacity *
+                    (level === 'LOW' ? 0.3 : level === 'MODERATE' ? 0.6 : level === 'HIGH' ? 0.85 : 0.98)
+                );
           const pct = Math.round((nextCount / z.maxCapacity) * 100);
           return {
             ...z,
@@ -210,15 +227,15 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (targetZone) {
       setActiveToast(`Updated crowd level for ${targetZone.name} to ${level}`);
     }
-  };
+  }, [zones]);
 
-  const updateSession = (updatedSession: Session) => {
+  const updateSession = useCallback((updatedSession: Session) => {
     setSessions((prev) => prev.map((s) => (s.id === updatedSession.id ? updatedSession : s)));
-    setActiveToast(`Updated session details for "${updatedSession.title}"`);
-  };
+    setActiveToast(`Updated session details for "${updatedSession.title.slice(0, 40)}"`);
+  }, []);
 
   // Demo Simulation trigger
-  const triggerSimulatedAlert = () => {
+  const triggerSimulatedAlert = useCallback(() => {
     const categories: Announcement['category'][] = ['URGENT', 'CROWD', 'SCHEDULE'];
     const randomCat = categories[Math.floor(Math.random() * categories.length)];
 
@@ -231,7 +248,6 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } else if (randomCat === 'CROWD') {
       title = 'Crowd Shift Notice: Main Hall Clearing';
       message = 'Main Stage session wrapped up. Expect high foot traffic near Bites & Brews Food Court.';
-      // Spike food court crowd
       updateZoneCrowd('zone-d', 'HIGH', 430);
     } else {
       title = 'Schedule Update: Lab A Workshop';
@@ -239,9 +255,9 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     addAnnouncement(title, message, randomCat);
-  };
+  }, [addAnnouncement, updateZoneCrowd]);
 
-  // High contrast mode effect
+  // High contrast mode DOM toggle
   useEffect(() => {
     if (preferences.highContrast) {
       document.documentElement.classList.add('high-contrast-mode');
@@ -250,37 +266,66 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [preferences.highContrast]);
 
-  const value = {
-    role,
-    setRole,
-    activeView,
-    setActiveView,
-    locations,
-    setLocations,
-    zones,
-    sessions,
-    announcements,
-    incidents,
-    savedSessionIds,
-    preferences,
-    updatePreferences,
-    toggleInterest,
-    toggleSavedSession,
-    navigationStartId,
-    setNavigationStartId,
-    navigationEndId,
-    setNavigationEndId,
-    activeRoute,
-    startNavigationTo,
-    createSOSIncident,
-    addAnnouncement,
-    updateIncidentStatus,
-    updateZoneCrowd,
-    updateSession,
-    triggerSimulatedAlert,
-    activeToast,
-    clearToast,
-  };
+  // Stable Memoized Context Value
+  const value = useMemo(
+    () => ({
+      role,
+      setRole,
+      activeView,
+      setActiveView,
+      locations,
+      setLocations,
+      zones,
+      sessions,
+      announcements,
+      incidents,
+      savedSessionIds,
+      preferences,
+      updatePreferences,
+      toggleInterest,
+      toggleSavedSession,
+      navigationStartId,
+      setNavigationStartId,
+      navigationEndId,
+      setNavigationEndId,
+      activeRoute,
+      startNavigationTo,
+      createSOSIncident,
+      addAnnouncement,
+      updateIncidentStatus,
+      updateZoneCrowd,
+      updateSession,
+      triggerSimulatedAlert,
+      activeToast,
+      clearToast,
+    }),
+    [
+      role,
+      activeView,
+      locations,
+      zones,
+      sessions,
+      announcements,
+      incidents,
+      savedSessionIds,
+      preferences,
+      updatePreferences,
+      toggleInterest,
+      toggleSavedSession,
+      navigationStartId,
+      navigationEndId,
+      activeRoute,
+      startNavigationTo,
+      createSOSIncident,
+      addAnnouncement,
+      updateIncidentStatus,
+      updateZoneCrowd,
+      updateSession,
+      triggerSimulatedAlert,
+      activeToast,
+      clearToast,
+    ]
+  );
 
   return <EventContext.Provider value={value}>{children}</EventContext.Provider>;
 };
